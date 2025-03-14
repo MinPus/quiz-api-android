@@ -9,11 +9,6 @@ const db = mysql.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
 });
-const pool = mysql.createPool({
-  ...
-  keepAliveInitialDelay: 10000, // 0 by default.
-  enableKeepAlive: true, // false by default.
-});
 db.connect((err) => {
     if (err) {
         console.error("Database connection failed: ", err);
