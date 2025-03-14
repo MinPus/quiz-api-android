@@ -2,17 +2,19 @@
 require("dotenv").config();
 const mysql = require("mysql2");
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  enableKeepAlive: true, // Duy trì kết nối
-  keepAliveInitialDelay: 10000 // Sau 10 giây mới gửi keep-alive
+const db = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 });
 
-module.exports = pool.promise();
+db.connect((err) => {
+    if (err) {
+        console.error("Database connection failed: ", err);
+        return;
+    }
+    console.log("Connected to MySQL database");
+});
 
+module.exports = db;
