@@ -22,6 +22,28 @@ const addRecord = async (table, fields, values, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+// Hàm xóa dữ liệu từ bảng bất kỳ
+const deleteRecord = async (table, idField, idValue, res) => {
+    try {
+        await db.execute(`DELETE FROM ${table} WHERE ${idField} = ?`, [idValue]);
+        res.json({ message: `Xóa khỏi ${table} thành công` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Hàm cập nhật dữ liệu trong bảng bất kỳ
+const updateRecord = async (table, idField, idValue, updates, res) => {
+    try {
+        const fields = Object.keys(updates).map(field => `${field} = ?`).join(', ');
+        const values = Object.values(updates);
+        values.push(idValue);
+        await db.execute(`UPDATE ${table} SET ${fields} WHERE ${idField} = ?`, values);
+        res.json({ message: `Cập nhật ${table} thành công` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
 
 // Routes GET
 router.get('/monhoc', (req, res) => getAll('monhoc', res));
@@ -85,6 +107,22 @@ router.post('/cautraloi', (req, res) => {
         return res.status(400).json({ error: "Thiếu dữ liệu" });
     addRecord('cautraloi', ['id_cautraloi', 'id_cauhoi', 'noidungcautraloi'], 
               [id_cautraloi, id_cauhoi, noidungcautraloi], res);
+});
+
+// Routes DELETE
+router.delete('/:table/:id', (req, res) => {
+    const { table, id } = req.params;
+    const idField = `id_${table}`;
+    deleteRecord(table, idField, id, res);
+});
+
+// Routes PUT
+router.put('/:table/:id', (req, res) => {
+    const { table, id } = req.params;
+    const updates = req.body;
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Không có dữ liệu để cập nhật" });
+    const idField = `id_${table}`;
+    updateRecord(table, idField, id, updates, res);
 });
 
 module.exports = router;
