@@ -1,93 +1,78 @@
-const express = require("express");
-const routes = express.Router();
-const db = require("../db"); // Import kết nối MySQL từ db.js
+const express = require('express');
+const router = express.Router();
+const db = require('../db');
 
-// Lấy danh sách giáo viên
-routes.get("/giaovien", (req, res) => {
-    db.query("SELECT * FROM giaovien", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
-
-// Thêm giáo viên mới
-routes.post("/giaovien", (req, res) => {
-    const { id_giaovien, ten_giaovien, tendangnhap_gv, matkhau_gv, email_gv, phone_gv, monchinh, lopdaychinh } = req.body;
-    if (!id_giaovien || !ten_giaovien || !tendangnhap_gv || !matkhau_gv || !email_gv || !phone_gv || !lopdaychinh) {
-        return res.status(400).json({ error: "Thiếu dữ liệu!" });
+// Hàm lấy toàn bộ dữ liệu từ bảng bất kỳ
+const getAll = async (table, res) => {
+    try {
+        const [rows] = await db.execute(`SELECT * FROM ${table}`);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    
-    const sql = "INSERT INTO giaovien (id_giaovien, ten_giaovien, tendangnhap_gv, matkhau_gv, email_gv, phone_gv, monchinh, lopdaychinh) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    db.query(sql, [id_giaovien, ten_giaovien, tendangnhap_gv, matkhau_gv, email_gv, phone_gv, monchinh, lopdaychinh], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Thêm giáo viên thành công!", data: result });
-    });
-});
+};
 
-// Lấy danh sách học sinh
-routes.get("/hocsinh", (req, res) => {
-    db.query("SELECT * FROM hocsinh", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
-
-// Thêm học sinh mới
-routes.post("/hocsinh", (req, res) => {
-    const { id_hocsinh, ten_hocsinh, tendangnhap, matkhau, email, phone } = req.body;
-    if (!id_hocsinh || !ten_hocsinh || !tendangnhap || !matkhau || !email || !phone) {
-        return res.status(400).json({ error: "Thiếu dữ liệu!" });
+// Hàm thêm dữ liệu vào bảng bất kỳ
+const addRecord = async (table, fields, values, res) => {
+    try {
+        const placeholders = values.map(() => '?').join(', ');
+        await db.execute(`INSERT INTO ${table} (${fields.join(', ')}) VALUES (${placeholders})`, values);
+        res.status(201).json({ message: `Thêm vào ${table} thành công` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    
-    const sql = "INSERT INTO hocsinh (id_hocsinh, ten_hocsinh, tendangnhap, matkhau, email, phone) VALUES (?, ?, ?, ?, ?, ?)";
-    db.query(sql, [id_hocsinh, ten_hocsinh, tendangnhap, matkhau, email, phone], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Thêm học sinh thành công!", data: result });
-    });
-});
+};
 
-// Lấy danh sách môn học
-routes.get("/monhoc", (req, res) => {
-    db.query("SELECT * FROM monhoc", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
+// Routes GET
+router.get('/monhoc', (req, res) => getAll('monhoc', res));
+router.get('/hocsinh', (req, res) => getAll('hocsinh', res));
+router.get('/giaovien', (req, res) => getAll('giaovien', res));
+router.get('/dethi', (req, res) => getAll('dethi', res));
+router.get('/baithi', (req, res) => getAll('baithi', res));
+router.get('/cauhoi', (req, res) => getAll('cauhoi', res));
+router.get('/cautraloi', (req, res) => getAll('cautraloi', res));
 
-// Thêm môn học mới
-routes.post("/monhoc", (req, res) => {
+
+// Routes POST
+router.post('/monhoc', (req, res) => {
     const { id_monhoc, tenmonhoc } = req.body;
-    if (!id_monhoc || !tenmonhoc) {
-        return res.status(400).json({ error: "Thiếu dữ liệu!" });
-    }
-    
-    const sql = "INSERT INTO monhoc (id_monhoc, tenmonhoc) VALUES (?, ?)";
-    db.query(sql, [id_monhoc, tenmonhoc], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Thêm môn học thành công!", data: result });
-    });
+    if (!id_monhoc || !tenmonhoc) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('monhoc', ['id_monhoc', 'tenmonhoc'], [id_monhoc, tenmonhoc], res);
+});
+router.post('/hocsinh', (req, res) => {
+    const { id_hocsinh, tenhocsinh, lop } = req.body;
+    if (!id_hocsinh || !tenhocsinh || !lop) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('hocsinh', ['id_hocsinh', 'tenhocsinh', 'lop'], [id_hocsinh, tenhocsinh, lop], res);
 });
 
-// Lấy danh sách bài thi
-routes.get("/baithi", (req, res) => {
-    db.query("SELECT * FROM baithi", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
+router.post('/giaovien', (req, res) => {
+    const { id_giaovien, tengiaovien, monhoc } = req.body;
+    if (!id_giaovien || !tengiaovien || !monhoc) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('giaovien', ['id_giaovien', 'tengiaovien', 'monhoc'], [id_giaovien, tengiaovien, monhoc], res);
 });
 
-// Thêm bài thi mới
-routes.post("/baithi", (req, res) => {
-    const { id_baithi, id_hocsinh, id_dethi, trangthai, diemthi } = req.body;
-    if (!id_baithi || !id_hocsinh || !id_dethi || !trangthai || diemthi === undefined) {
-        return res.status(400).json({ error: "Thiếu dữ liệu!" });
-    }
-    
-    const sql = "INSERT INTO baithi (id_baithi, id_hocsinh, id_dethi, trangthai, diemthi) VALUES (?, ?, ?, ?, ?)";
-    db.query(sql, [id_baithi, id_hocsinh, id_dethi, trangthai, diemthi], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Thêm bài thi thành công!", data: result });
-    });
+router.post('/dethi', (req, res) => {
+    const { id_dethi, ten_dethi } = req.body;
+    if (!id_dethi || !ten_dethi) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('dethi', ['id_dethi', 'ten_dethi'], [id_dethi, ten_dethi], res);
 });
 
-module.exports = routes;
+router.post('/baithi', (req, res) => {
+    const { id_baithi, id_hocsinh, diem } = req.body;
+    if (!id_baithi || !id_hocsinh || diem === undefined) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('baithi', ['id_baithi', 'id_hocsinh', 'diem'], [id_baithi, id_hocsinh, diem], res);
+});
+
+router.post('/cauhoi', (req, res) => {
+    const { id_cauhoi, noidung, id_dethi } = req.body;
+    if (!id_cauhoi || !noidung || !id_dethi) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('cauhoi', ['id_cauhoi', 'noidung', 'id_dethi'], [id_cauhoi, noidung, id_dethi], res);
+});
+
+router.post('/cautraloi', (req, res) => {
+    const { id_cautraloi, id_cauhoi, noidung, dung } = req.body;
+    if (!id_cautraloi || !id_cauhoi || !noidung || dung === undefined) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('cautraloi', ['id_cautraloi', 'id_cauhoi', 'noidung', 'dung'], [id_cautraloi, id_cauhoi, noidung, dung], res);
+});
+
+module.exports = router;
