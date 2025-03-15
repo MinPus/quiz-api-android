@@ -44,68 +44,23 @@ const updateRecord = async (table, idField, idValue, updates, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-const getMonHocById = async (id, res) => {
+
+// Hàm lấy dữ liệu từ bảng bất kỳ theo ID
+const getRecordById = async (table, idField, idValue, res) => {
     try {
-        const [rows] = await db.execute('SELECT * FROM monhoc WHERE id_monhoc = ?', [id]);
+        const [rows] = await db.execute(`SELECT * FROM ${table} WHERE ${idField} = ?`, [idValue]);
         res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-const getHocSinhById = async (id, res) => {
-    try {
-        const [rows] = await db.execute('SELECT * FROM hocsinh WHERE id_hocsinh = ?', [id]);
-        res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const getGiaoVienById = async (id, res) => {
-    try {
-        const [rows] = await db.execute('SELECT * FROM giaovien WHERE id_giaovien = ?', [id]);
-        res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const getDeThiById = async (id, res) => {
-    try {
-        const [rows] = await db.execute('SELECT * FROM dethi WHERE id_dethi = ?', [id]);
-        res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const getBaiThiById = async (id, res) => {
-    try {
-        const [rows] = await db.execute('SELECT * FROM baithi WHERE id_baithi = ?', [id]);
-        res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const getCauHoiById = async (id, res) => {
-    try {
-        const [rows] = await db.execute('SELECT * FROM cauhoi WHERE id_cauhoi = ?', [id]);
-        res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const getCauTraLoiById = async (id, res) => {
-    try {
-        const [rows] = await db.execute('SELECT * FROM cautraloi WHERE id_cautraloi = ?', [id]);
-        res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
+// Routes GET theo ID
+router.get('/:table/:id', (req, res) => {
+    const { table, id } = req.params;
+    const idField = `id_${table}`;
+    getRecordById(table, idField, id, res);
+});
 
 // Routes GET
 router.get('/monhoc', (req, res) => getAll('monhoc', res));
