@@ -32,47 +32,59 @@ router.get('/baithi', (req, res) => getAll('baithi', res));
 router.get('/cauhoi', (req, res) => getAll('cauhoi', res));
 router.get('/cautraloi', (req, res) => getAll('cautraloi', res));
 
-
 // Routes POST
 router.post('/monhoc', (req, res) => {
     const { id_monhoc, tenmonhoc } = req.body;
     if (!id_monhoc || !tenmonhoc) return res.status(400).json({ error: "Thiếu dữ liệu" });
     addRecord('monhoc', ['id_monhoc', 'tenmonhoc'], [id_monhoc, tenmonhoc], res);
 });
+
 router.post('/hocsinh', (req, res) => {
-    const { id_hocsinh, ten_hocsinh} = req.body;
-    if (!id_hocsinh || !tenhocsinh) return res.status(400).json({ error: "Thiếu dữ liệu" });
-    addRecord('hocsinh', ['id_hocsinh', 'tenhocsinh'], [id_hocsinh, tenhocsinh], res);
+    const { id_hocsinh, ten_hocsinh, tendangnhap, matkhau, email, phone } = req.body;
+    if (!id_hocsinh || !ten_hocsinh || !tendangnhap || !matkhau || !email || !phone) 
+        return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('hocsinh', ['id_hocsinh', 'ten_hocsinh', 'tendangnhap', 'matkhau', 'email', 'phone'], 
+              [id_hocsinh, ten_hocsinh, tendangnhap, matkhau, email, phone], res);
 });
 
 router.post('/giaovien', (req, res) => {
-    const { id_giaovien, tengiaovien, monhoc } = req.body;
-    if (!id_giaovien || !tengiaovien || !monhoc) return res.status(400).json({ error: "Thiếu dữ liệu" });
-    addRecord('giaovien', ['id_giaovien', 'tengiaovien', 'monhoc'], [id_giaovien, tengiaovien, monhoc], res);
+    const { id_giaovien, ten_giaovien, tendangnhap_gv, matkhau_gv, email_gv, phone_gv, monchinh, lopdaychinh } = req.body;
+    if (!id_giaovien || !ten_giaovien || !tendangnhap_gv || !matkhau_gv || !email_gv || !phone_gv || !lopdaychinh) 
+        return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('giaovien', ['id_giaovien', 'ten_giaovien', 'tendangnhap_gv', 'matkhau_gv', 'email_gv', 'phone_gv', 'monchinh', 'lopdaychinh'], 
+              [id_giaovien, ten_giaovien, tendangnhap_gv, matkhau_gv, email_gv, phone_gv, monchinh, lopdaychinh], res);
 });
 
 router.post('/dethi', (req, res) => {
-    const { id_dethi, ten_dethi } = req.body;
-    if (!id_dethi || !ten_dethi) return res.status(400).json({ error: "Thiếu dữ liệu" });
-    addRecord('dethi', ['id_dethi', 'ten_dethi'], [id_dethi, ten_dethi], res);
+    const { id_dethi, id_giaovien, id_monhoc, thoigianthi, trangthai } = req.body;
+    if (!id_dethi || !id_giaovien || !id_monhoc || !thoigianthi || !trangthai) 
+        return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('dethi', ['id_dethi', 'id_giaovien', 'id_monhoc', 'thoigianthi', 'trangthai'], 
+              [id_dethi, id_giaovien, id_monhoc, thoigianthi, trangthai], res);
 });
 
 router.post('/baithi', (req, res) => {
-    const { id_baithi, id_hocsinh, diem } = req.body;
-    if (!id_baithi || !id_hocsinh || diem === undefined) return res.status(400).json({ error: "Thiếu dữ liệu" });
-    addRecord('baithi', ['id_baithi', 'id_hocsinh', 'diem'], [id_baithi, id_hocsinh, diem], res);
+    const { id_baithi, id_hocsinh, id_dethi, trangthai, diemthi } = req.body;
+    if (!id_baithi || !id_hocsinh || !id_dethi || !trangthai || diemthi === undefined) 
+        return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('baithi', ['id_baithi', 'id_hocsinh', 'id_dethi', 'trangthai', 'diemthi'], 
+              [id_baithi, id_hocsinh, id_dethi, trangthai, diemthi], res);
 });
 
 router.post('/cauhoi', (req, res) => {
-    const { id_cauhoi, noidung, id_dethi } = req.body;
-    if (!id_cauhoi || !noidung || !id_dethi) return res.status(400).json({ error: "Thiếu dữ liệu" });
-    addRecord('cauhoi', ['id_cauhoi', 'noidung', 'id_dethi'], [id_cauhoi, noidung, id_dethi], res);
+    const { id_cauhoi, noidungcauhoi, dapan, id_monhoc } = req.body;
+    if (!id_cauhoi || !noidungcauhoi || !dapan || !id_monhoc) 
+        return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('cauhoi', ['id_cauhoi', 'noidungcauhoi', 'dapan', 'id_monhoc'], 
+              [id_cauhoi, noidungcauhoi, dapan, id_monhoc], res);
 });
 
 router.post('/cautraloi', (req, res) => {
-    const { id_cautraloi, id_cauhoi, noidung, dung } = req.body;
-    if (!id_cautraloi || !id_cauhoi || !noidung || dung === undefined) return res.status(400).json({ error: "Thiếu dữ liệu" });
-    addRecord('cautraloi', ['id_cautraloi', 'id_cauhoi', 'noidung', 'dung'], [id_cautraloi, id_cauhoi, noidung, dung], res);
+    const { id_cautraloi, id_cauhoi, noidungcautraloi } = req.body;
+    if (!id_cautraloi || !id_cauhoi || !noidungcautraloi) 
+        return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('cautraloi', ['id_cautraloi', 'id_cauhoi', 'noidungcautraloi'], 
+              [id_cautraloi, id_cauhoi, noidungcautraloi], res);
 });
 
 module.exports = router;
