@@ -40,9 +40,9 @@ router.post('/monhoc', (req, res) => {
     addRecord('monhoc', ['id_monhoc', 'tenmonhoc'], [id_monhoc, tenmonhoc], res);
 });
 router.post('/hocsinh', (req, res) => {
-    const { id_hocsinh, tenhocsinh, lop } = req.body;
-    if (!id_hocsinh || !tenhocsinh || !lop) return res.status(400).json({ error: "Thiếu dữ liệu" });
-    addRecord('hocsinh', ['id_hocsinh', 'tenhocsinh', 'lop'], [id_hocsinh, tenhocsinh, lop], res);
+    const { id_hocsinh, ten_hocsinh, lop } = req.body;
+    if (!id_hocsinh || !tenhocsinh) return res.status(400).json({ error: "Thiếu dữ liệu" });
+    addRecord('hocsinh', ['id_hocsinh', 'tenhocsinh'], [id_hocsinh, tenhocsinh], res);
 });
 
 router.post('/giaovien', (req, res) => {
