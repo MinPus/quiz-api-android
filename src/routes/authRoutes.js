@@ -45,22 +45,25 @@ const updateRecord = async (table, idField, idValue, updates, res) => {
     }
 };
 
-// Hàm lấy dữ liệu từ bảng bất kỳ theo ID
-const getRecordById = async (table, idField, idValue, res) => {
+// Route GET theo id cho từng bảng
+const getById = async (table, idField, idValue, res) => {
     try {
         const [rows] = await db.execute(`SELECT * FROM ${table} WHERE ${idField} = ?`, [idValue]);
-        res.json(rows.length ? rows[0] : { error: 'Không tìm thấy dữ liệu' });
+        if (rows.length === 0) return res.status(404).json({ error: `${table} không tồn tại` });
+        res.json(rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
 // Routes GET theo ID
-router.get('/:table/:id', (req, res) => {
-    const { table, id } = req.params;
-    const idField = `id_${table}`;
-    getRecordById(table, idField, id, res);
-});
+router.get('/monhoc/:id', (req, res) => getById('monhoc', 'id_monhoc', req.params.id, res));
+router.get('/hocsinh/:id', (req, res) => getById('hocsinh', 'id_hocsinh', req.params.id, res));
+router.get('/giaovien/:id', (req, res) => getById('giaovien', 'id_giaovien', req.params.id, res));
+router.get('/dethi/:id', (req, res) => getById('dethi', 'id_dethi', req.params.id, res));
+router.get('/baithi/:id', (req, res) => getById('baithi', 'id_baithi', req.params.id, res));
+router.get('/cauhoi/:id', (req, res) => getById('cauhoi', 'id_cauhoi', req.params.id, res));
+router.get('/cautraloi/:id', (req, res) => getById('cautraloi', 'id_cautraloi', req.params.id, res));
 
 // Routes GET
 router.get('/monhoc', (req, res) => getAll('monhoc', res));
