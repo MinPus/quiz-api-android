@@ -129,6 +129,32 @@ router.post('/cautraloi', (req, res) => {
               [id_cautraloi, id_cauhoi, noidungcautraloi], res);
 });
 
+// Hàm xóa các bài thi và đề thi khi xóa giáo viên
+const deleteRecord = async (table, idField, idValue, res) => {
+    try {
+        if (table === 'giaovien') {
+            // Xóa tất cả các đề thi của giáo viên
+            const [dethiRows] = await db.execute(`SELECT id_dethi FROM dethi WHERE id_giaovien = ?`, [idValue]);
+
+            if (dethiRows.length > 0) {
+                const dethiIds = dethiRows.map(row => row.id_dethi);
+
+                // Xóa tất cả bài thi có id_dethi thuộc về giáo viên bị xóa
+                await db.execute(`DELETE FROM baithi WHERE id_dethi IN (${dethiIds.map(() => '?').join(', ')})`, dethiIds);
+
+                // Xóa tất cả đề thi của giáo viên
+                await db.execute(`DELETE FROM dethi WHERE id_giaovien = ?`, [idValue]);
+            }
+        }
+
+        // Xóa giáo viên (hoặc bản ghi của bảng bất kỳ)
+        await db.execute(`DELETE FROM ${table} WHERE ${idField} = ?`, [idValue]);
+        res.json({ message: `Xóa khỏi ${table} thành công` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // Routes DELETE
 router.delete('/:table/:id', (req, res) => {
     const { table, id } = req.params;
