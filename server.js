@@ -18,8 +18,6 @@ app.use(express.json());
 app.use('/api', authRoutes);
 
 const PORT = process.env.PORT || 3000;
-const express = require("express");
-
 
 // Các route API của bạn ở đây
 app.get("/test", (req, res) => {
