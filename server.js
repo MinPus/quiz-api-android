@@ -1,3 +1,12 @@
+const cors = require("cors");
+
+// Cấu hình CORS cho phép frontend truy cập
+app.use(cors({
+  origin: "http://localhost:5173", // Hoặc URL của frontend trên mạng
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true // Nếu có dùng cookie hoặc session
+}));
+
 const express = require('express');
 const dotenv = require('dotenv');
 const pool = require('./src/db'); // Import kết nối MySQL
@@ -10,14 +19,7 @@ app.use('/api', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 const express = require("express");
-const cors = require("cors");
 
-// Cấu hình CORS cho phép frontend truy cập
-app.use(cors({
-  origin: "http://localhost:5173", // Hoặc URL của frontend trên mạng
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true // Nếu có dùng cookie hoặc session
-}));
 
 // Các route API của bạn ở đây
 app.get("/test", (req, res) => {
