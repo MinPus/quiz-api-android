@@ -130,7 +130,7 @@ router.post('/cautraloi', (req, res) => {
 });
 
 // Hàm xóa các bài thi và đề thi khi xóa giáo viên
-deleteRecord = async (table, idField, idValue, res) => {
+const delRecord = async (table, idField, idValue, res) => {
     try {
         if (table === 'giaovien') {
             // Xóa tất cả các đề thi của giáo viên
