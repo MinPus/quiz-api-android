@@ -1,7 +1,6 @@
-class monhoc {
-    constructor(id_monhoc, tenmonhoc) {
-        this.id_monhoc = id_monhoc;
-        this.tenmonhoc = tenmonhoc;
-    }
-}
-module.exports = monhoc;
+const monhoc = {
+    create: (id_monhoc, tenmonhoc) => ({
+        id_monhoc,
+        tenmonhoc
+    })
+};
