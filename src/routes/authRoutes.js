@@ -7,20 +7,20 @@ const Ke_hoach = require('../models/ke_hoachModels');
 const app = express();
 app.use(bodyParser.json());
 
-// Get all users
-app.get('/users', async (req, res) => {
-    const users = await User.findAll();
-    res.json(users);
+// Get all User
+app.get('/User', async (req, res) => {
+    const User = await User.findAll();
+    res.json(User);
 });
 
 // Get user by ID
-app.get('/users/:id', async (req, res) => {
+app.get('/User/:id', async (req, res) => {
     const user = await User.findByPk(req.params.id);
     user ? res.json(user) : res.status(404).json({ error: 'User not found' });
 });
 
 // Create a new user
-app.post('/users', async (req, res) => {
+app.post('/User', async (req, res) => {
     const { name_user, user_account, pword_account } = req.body;
     try {
         const user = await User.create({ name_user, user_account, pword_account });
@@ -31,7 +31,7 @@ app.post('/users', async (req, res) => {
 });
 
 // Update user
-app.put('/users/:id', async (req, res) => {
+app.put('/User/:id', async (req, res) => {
     const user = await User.findByPk(req.params.id);
     if (user) {
         await user.update(req.body);
@@ -42,7 +42,7 @@ app.put('/users/:id', async (req, res) => {
 });
 
 // Delete user
-app.delete('/users/:id', async (req, res) => {
+app.delete('/User/:id', async (req, res) => {
     const user = await User.findByPk(req.params.id);
     if (user) {
         await user.destroy();
@@ -52,20 +52,20 @@ app.delete('/users/:id', async (req, res) => {
     }
 });
 
-// Get all plans
-app.get('/plans', async (req, res) => {
-    const plans = await KeHoach.findAll();
-    res.json(plans);
+// Get all Ke_hoach
+app.get('/Ke_hoach', async (req, res) => {
+    const Ke_hoach = await KeHoach.findAll();
+    res.json(Ke_hoach);
 });
 
 // Get plan by ID
-app.get('/plans/:id', async (req, res) => {
+app.get('/Ke_hoach/:id', async (req, res) => {
     const plan = await KeHoach.findByPk(req.params.id);
     plan ? res.json(plan) : res.status(404).json({ error: 'Plan not found' });
 });
 
 // Create a new plan
-app.post('/plans', async (req, res) => {
+app.post('/Ke_hoach', async (req, res) => {
     const { name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user } = req.body;
     try {
         const plan = await KeHoach.create({ name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user });
@@ -76,7 +76,7 @@ app.post('/plans', async (req, res) => {
 });
 
 // Update plan
-app.put('/plans/:id', async (req, res) => {
+app.put('/Ke_hoach/:id', async (req, res) => {
     const plan = await KeHoach.findByPk(req.params.id);
     if (plan) {
         await plan.update(req.body);
@@ -87,7 +87,7 @@ app.put('/plans/:id', async (req, res) => {
 });
 
 // Delete plan
-app.delete('/plans/:id', async (req, res) => {
+app.delete('/Ke_hoach/:id', async (req, res) => {
     const plan = await KeHoach.findByPk(req.params.id);
     if (plan) {
         await plan.destroy();
