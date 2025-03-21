@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const sequelize = require('../db');
 const User = require('../models/userModels');
-const KeHoach = require('../models/ke_hoachModels');
+const Ke_hoach = require('../models/ke_hoachModels'); 
 
 const app = express();
 app.use(bodyParser.json());
