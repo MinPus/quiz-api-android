@@ -1,43 +1,11 @@
-// models/ke_hoachModels.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../db');
-const User = require('../userModels');
-
-const KeHoach = sequelize.define('KeHoach', {
-    id_plan: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-    },
-    name_plan: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    noidung: {
-        type: DataTypes.TEXT
-    },
-    ngaygiobatdau: {
-        type: DataTypes.DATE,
-        allowNull: false
-    },
-    ngaygioketthuc: {
-        type: DataTypes.DATE,
-        allowNull: false
-    },
-    id_user: {
-        type: DataTypes.INTEGER,
-        references: {
-            model: User,
-            key: 'id_user'
-        },
-        onDelete: 'CASCADE'
+class Ke_hoach {
+    constructor(id_plan, name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user) {
+        this.id_plan = id_plan;
+        this.name_plan = name_plan;
+        this.noidung = noidung;
+        this.ngaygiobatdau = ngaygiobatdau;
+        this.ngaygioketthuc = ngaygioketthuc;
+        this.id_user = id_user;
     }
-}, {
-    tableName: 'ke_hoach',
-    timestamps: false
-});
-
-User.hasMany(KeHoach, { foreignKey: 'id_user' });
-KeHoach.belongsTo(User, { foreignKey: 'id_user' });
-
-module.exports = KeHoach;
+}
+module.exports = Ke_hoach;
