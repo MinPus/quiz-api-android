@@ -1,27 +1,43 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+// models/ke_hoachModels.js
+const { DataTypes } = require('sequelize');
+const sequelize = require('../db');
+const User = require('../userModels');
 
-Base = declarative_base()
+const KeHoach = sequelize.define('KeHoach', {
+    id_plan: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    name_plan: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    noidung: {
+        type: DataTypes.TEXT
+    },
+    ngaygiobatdau: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    ngaygioketthuc: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    id_user: {
+        type: DataTypes.INTEGER,
+        references: {
+            model: User,
+            key: 'id_user'
+        },
+        onDelete: 'CASCADE'
+    }
+}, {
+    tableName: 'ke_hoach',
+    timestamps: false
+});
 
-class User(Base):
-    __tablename__ = 'user'
+User.hasMany(KeHoach, { foreignKey: 'id_user' });
+KeHoach.belongsTo(User, { foreignKey: 'id_user' });
 
-    id_user = Column(Integer, primary_key=True, autoincrement=True)
-    name_user = Column(String(255), nullable=False)
-    user_account = Column(String(255), unique=True, nullable=False)
-    pword_account = Column(String(255), nullable=False)
-
-    ke_hoach = relationship("KeHoach", back_populates="user", cascade="all, delete")
-
-class KeHoach(Base):
-    __tablename__ = 'ke_hoach'
-
-    id_plan = Column(Integer, primary_key=True, autoincrement=True)
-    name_plan = Column(String(255), nullable=False)
-    noidung = Column(Text)
-    ngaygiobatdau = Column(DateTime, nullable=False)
-    ngaygioketthuc = Column(DateTime, nullable=False)
-    id_user = Column(Integer, ForeignKey('user.id_user', ondelete='CASCADE'))
-
-    user = relationship("User", back_populates="ke_hoach")
+module.exports = KeHoach;
