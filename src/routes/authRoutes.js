@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const sequelize = require('./config/database');
+const sequelize = require('../db');
 const User = require('./models/userModels');
 const KeHoach = require('./models/ke_hoachModels');
 
