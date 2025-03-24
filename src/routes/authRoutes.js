@@ -5,6 +5,24 @@ const db = require('../db');
 const router = express.Router();
 require('dotenv').config();
 
+// Test API thêm user
+router.post('/test-user', async (req, res) => {
+    const { name_user, user_account, pword_account } = req.body;
+    if (!name_user || !user_account || !pword_account) {
+        return res.status(400).json({ message: 'Thiếu thông tin' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(pword_account, 10);
+        await db.query('INSERT INTO users (name_user, user_account, pword_account) VALUES (?, ?, ?)',
+            [name_user, user_account, hashedPassword]);
+
+        res.status(201).json({ message: 'Thêm user thành công', user: { name_user, user_account } });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error });
+    }
+});
+
 // Đăng ký
 router.post('/register', async (req, res) => {
     const { name_user, user_account, pword_account } = req.body;
