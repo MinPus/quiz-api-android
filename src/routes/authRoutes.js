@@ -12,13 +12,13 @@ router.post('/register', async (req, res) => {
     }
 
     try {
-        const [existingUser] = await db.query('SELECT * FROM users WHERE user_account = ?', [user_account]);
+        const [existingUser] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
         if (existingUser.length > 0) {
             return res.status(400).json({ message: 'Tài khoản đã tồn tại' });
         }
 
         const hashedPassword = await bcrypt.hash(pword_account, 10);
-        await db.query('INSERT INTO users (name_user, user_account, pword_account) VALUES (?, ?, ?)',
+        await db.query('INSERT INTO user (name_user, user_account, pword_account) VALUES (?, ?, ?)',
             [name_user, user_account, hashedPassword]);
 
         res.status(201).json({ message: 'Đăng ký thành công' });
@@ -31,7 +31,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { user_account, pword_account } = req.body;
     try {
-        const [user] = await db.query('SELECT * FROM users WHERE user_account = ?', [user_account]);
+        const [user] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
         if (user.length === 0) {
             return res.status(400).json({ message: 'Tài khoản không tồn tại' });
         }
@@ -51,8 +51,8 @@ router.post('/login', async (req, res) => {
 // Lấy danh sách người dùng
 router.get('/user', async (req, res) => {
     try {
-        const [users] = await db.query('SELECT id_user, name_user, user_account FROM users');
-        res.json(users);
+        const [user] = await db.query('SELECT id_user, name_user, user_account FROM user');
+        res.json(user);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error });
     }
@@ -62,7 +62,7 @@ router.get('/user', async (req, res) => {
 router.get('/user/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const [user] = await db.query('SELECT id_user, name_user, user_account FROM users WHERE id_user = ?', [id]);
+        const [user] = await db.query('SELECT id_user, name_user, user_account FROM user WHERE id_user = ?', [id]);
         if (user.length === 0) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
