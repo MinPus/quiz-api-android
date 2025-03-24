@@ -49,7 +49,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Lấy danh sách người dùng
-router.get('/users', async (req, res) => {
+router.get('/user', async (req, res) => {
     try {
         const [users] = await db.query('SELECT id_user, name_user, user_account FROM users');
         res.json(users);
@@ -59,7 +59,7 @@ router.get('/users', async (req, res) => {
 });
 
 // Lấy thông tin người dùng theo ID
-router.get('/users/:id', async (req, res) => {
+router.get('/user/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const [user] = await db.query('SELECT id_user, name_user, user_account FROM users WHERE id_user = ?', [id]);
