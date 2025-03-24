@@ -1,98 +1,75 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const sequelize = require('../db');
-const User = require('../models/userModels');
-const Ke_hoach = require('../models/ke_hoachModels'); 
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const db = require('../db');
+const router = express.Router();
 
-const app = express();
-app.use(bodyParser.json());
-
-// Get all User
-app.get('/User', async (req, res) => {
-    const User = await User.findAll();
-    res.json(User);
-});
-
-// Get user by ID
-app.get('/User/:id', async (req, res) => {
-    const user = await User.findByPk(req.params.id);
-    user ? res.json(user) : res.status(404).json({ error: 'User not found' });
-});
-
-// Create a new user
-app.post('/User', async (req, res) => {
+// Đăng ký
+router.post('/register', async (req, res) => {
     const { name_user, user_account, pword_account } = req.body;
+    if (!name_user || !user_account || !pword_account) {
+        return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
+    }
+
     try {
-        const user = await User.create({ name_user, user_account, pword_account });
-        res.status(201).json(user);
+        const [existingUser] = await db.query('SELECT * FROM users WHERE user_account = ?', [user_account]);
+        if (existingUser.length > 0) {
+            return res.status(400).json({ message: 'Tài khoản đã tồn tại' });
+        }
+
+        const hashedPassword = await bcrypt.hash(pword_account, 10);
+        await db.query('INSERT INTO users (name_user, user_account, pword_account) VALUES (?, ?, ?)',
+            [name_user, user_account, hashedPassword]);
+
+        res.status(201).json({ message: 'Đăng ký thành công' });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ message: 'Lỗi server', error });
     }
 });
 
-// Update user
-app.put('/User/:id', async (req, res) => {
-    const user = await User.findByPk(req.params.id);
-    if (user) {
-        await user.update(req.body);
-        res.json(user);
-    } else {
-        res.status(404).json({ error: 'User not found' });
-    }
-});
-
-// Delete user
-app.delete('/User/:id', async (req, res) => {
-    const user = await User.findByPk(req.params.id);
-    if (user) {
-        await user.destroy();
-        res.json({ message: 'User deleted' });
-    } else {
-        res.status(404).json({ error: 'User not found' });
-    }
-});
-
-// Get all Ke_hoach
-app.get('/Ke_hoach', async (req, res) => {
-    const Ke_hoach = await KeHoach.findAll();
-    res.json(Ke_hoach);
-});
-
-// Get plan by ID
-app.get('/Ke_hoach/:id', async (req, res) => {
-    const plan = await KeHoach.findByPk(req.params.id);
-    plan ? res.json(plan) : res.status(404).json({ error: 'Plan not found' });
-});
-
-// Create a new plan
-app.post('/Ke_hoach', async (req, res) => {
-    const { name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user } = req.body;
+// Đăng nhập
+router.post('/login', async (req, res) => {
+    const { user_account, pword_account } = req.body;
     try {
-        const plan = await KeHoach.create({ name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user });
-        res.status(201).json(plan);
+        const [user] = await db.query('SELECT * FROM users WHERE user_account = ?', [user_account]);
+        if (user.length === 0) {
+            return res.status(400).json({ message: 'Tài khoản không tồn tại' });
+        }
+
+        const isMatch = await bcrypt.compare(pword_account, user[0].pword_account);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu không đúng' });
+        }
+
+        const token = jwt.sign({ id_user: user[0].id_user }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.json({ message: 'Đăng nhập thành công', token });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ message: 'Lỗi server', error });
     }
 });
 
-// Update plan
-app.put('/Ke_hoach/:id', async (req, res) => {
-    const plan = await KeHoach.findByPk(req.params.id);
-    if (plan) {
-        await plan.update(req.body);
-        res.json(plan);
-    } else {
-        res.status(404).json({ error: 'Plan not found' });
+// Lấy danh sách người dùng
+router.get('/users', async (req, res) => {
+    try {
+        const [users] = await db.query('SELECT id_user, name_user, user_account FROM users');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error });
     }
 });
 
-// Delete plan
-app.delete('/Ke_hoach/:id', async (req, res) => {
-    const plan = await KeHoach.findByPk(req.params.id);
-    if (plan) {
-        await plan.destroy();
-        res.json({ message: 'Plan deleted' });
-    } else {
-        res.status(404).json({ error: 'Plan not found' });
+// Lấy thông tin người dùng theo ID
+router.get('/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [user] = await db.query('SELECT id_user, name_user, user_account FROM users WHERE id_user = ?', [id]);
+        if (user.length === 0) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+        res.json(user[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error });
     }
 });
+
+module.exports = router;
