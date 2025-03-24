@@ -90,4 +90,30 @@ router.post('/user', async (req, res) => {
     }
 });
 
+// Lấy danh sách kế hoạch
+router.get('/kehoach', async (req, res) => {
+    try {
+        const [plans] = await db.query('SELECT * FROM ke_hoach');
+        res.json(plans);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error });
+    }
+});
+
+// Thêm kế hoạch
+router.post('/kehoach', async (req, res) => {
+    const { name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user } = req.body;
+    if (!name_plan || !noidung || !ngaygiobatdau || !ngaygioketthuc || !id_user) {
+        return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
+    }
+
+    try {
+        await db.query('INSERT INTO ke_hoach (name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user) VALUES (?, ?, ?, ?, ?)',
+            [name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user]);
+        res.status(201).json({ message: 'Thêm kế hoạch thành công' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error });
+    }
+});
+
 module.exports = router;
