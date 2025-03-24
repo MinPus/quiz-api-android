@@ -73,12 +73,22 @@ router.get('/user/:id', async (req, res) => {
     }
 });
 
-// Cập nhật thông tin người dùng
+// Cập nhật thông tin người dùng (chỉ cập nhật name_user và pword_account)
 router.put('/user/:id', async (req, res) => {
     const { id } = req.params;
-    const { name_user, user_account } = req.body;
+    const { name_user, pword_account } = req.body;
     try {
-        await db.query('UPDATE user SET name_user = ?, user_account = ? WHERE id_user = ?', [name_user, user_account, id]);
+        const [user] = await db.query('SELECT * FROM user WHERE id_user = ?', [id]);
+        if (user.length === 0) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        const updatedName = name_user || user[0].name_user;
+        const updatedPassword = pword_account ? await bcrypt.hash(pword_account, 10) : user[0].pword_account;
+
+        await db.query('UPDATE user SET name_user = ?, pword_account = ? WHERE id_user = ?',
+            [updatedName, updatedPassword, id]);
+
         res.json({ message: 'Cập nhật người dùng thành công' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error });
@@ -118,30 +128,6 @@ router.post('/kehoach', async (req, res) => {
         await db.query('INSERT INTO ke_hoach (name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user) VALUES (?, ?, ?, ?, ?)',
             [name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user]);
         res.status(201).json({ message: 'Thêm kế hoạch thành công' });
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
-    }
-});
-
-// Cập nhật kế hoạch
-router.put('/kehoach/:id', async (req, res) => {
-    const { id } = req.params;
-    const { name_plan, noidung, ngaygiobatdau, ngaygioketthuc } = req.body;
-    try {
-        await db.query('UPDATE ke_hoach SET name_plan = ?, noidung = ?, ngaygiobatdau = ?, ngaygioketthuc = ? WHERE id_plan = ?',
-            [name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id]);
-        res.json({ message: 'Cập nhật kế hoạch thành công' });
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
-    }
-});
-
-// Xóa kế hoạch
-router.delete('/kehoach/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        await db.query('DELETE FROM ke_hoach WHERE id_plan = ?', [id]);
-        res.json({ message: 'Xóa kế hoạch thành công' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error });
     }
