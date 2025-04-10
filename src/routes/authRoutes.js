@@ -66,9 +66,10 @@ router.post('/send_otp', async (req, res) => {
         const otp = generateOtp();
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+        // Thêm purpose vào câu lệnh INSERT
         await db.query(
-            'INSERT INTO otp_verifications (user_account, otp_code, expires_at) VALUES (?, ?, ?)',
-            [user_account, otp, expiresAt]
+            'INSERT INTO otp_verifications (user_account, otp_code, expires_at, purpose) VALUES (?, ?, ?, ?)',
+            [user_account, otp, expiresAt, purpose]
         );
 
         const mailOptions = {
@@ -88,23 +89,28 @@ router.post('/send_otp', async (req, res) => {
 
 // API xác minh OTP
 router.post('/verify_otp', async (req, res) => {
-    const { user_account, otp } = req.body;
+    const { user_account, otp, purpose } = req.body;
 
-    if (!user_account || !otp) {
-        return res.status(400).json({ message: 'Vui lòng cung cấp email và mã OTP' });
+    if (!user_account || !otp || !purpose) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp email, mã OTP và mục đích (purpose)' });
+    }
+
+    if (!['register', 'reset_password'].includes(purpose)) {
+        return res.status(400).json({ message: 'Mục đích không hợp lệ' });
     }
 
     try {
+        // Kiểm tra thêm purpose trong điều kiện WHERE
         const [otpRecord] = await db.query(
-            'SELECT * FROM otp_verifications WHERE user_account = ? AND otp_code = ? AND expires_at > NOW()',
-            [user_account, otp]
+            'SELECT * FROM otp_verifications WHERE user_account = ? AND otp_code = ? AND expires_at > NOW() AND purpose = ?',
+            [user_account, otp, purpose]
         );
 
         if (otpRecord.length === 0) {
-            return res.status(400).json({ message: 'Mã OTP không đúng hoặc đã hết hạn' });
+            return res.status(400).json({ message: 'Mã OTP không đúng, đã hết hạn hoặc không khớp với mục đích' });
         }
 
-        await db.query('DELETE FROM otp_verifications WHERE user_account = ?', [user_account]);
+        await db.query('DELETE FROM otp_verifications WHERE user_account = ? AND purpose = ?', [user_account, purpose]);
         res.status(200).json({ message: 'Xác minh OTP thành công' });
     } catch (error) {
         console.error('Lỗi khi xác minh OTP:', error);
