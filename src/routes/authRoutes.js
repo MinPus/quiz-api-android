@@ -13,7 +13,7 @@ const authenticate = (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.send(token, process.env.JWT_SECRET);
         req.user = decoded; // Gắn payload đã giải mã (ví dụ: { id_user }) vào req.user
         next();
     } catch (error) {
@@ -324,8 +324,8 @@ router.post('/api/send-otp', async (req, res) => {
     }
 });
 
-// API xác minh OTP (để dùng với /api/verify-otp trong Flutter)
-router.post('/api/verify-otp', async (req, res) => {
+// API xác minh OTP (để dùng với /api/send-otp trong Flutter)
+router.post('/api/send-otp', async (req, res) => {
     const { user_account, otp } = req.body;
 
     if (!user_account || !otp) {
