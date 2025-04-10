@@ -38,16 +38,29 @@ const generateOtp = () => {
 
 // API gửi OTP
 router.post('/send_otp', async (req, res) => {
-    const { user_account } = req.body;
+    const { user_account, purpose } = req.body;
 
-    if (!user_account) {
-        return res.status(400).json({ message: 'Vui lòng cung cấp email' });
+    if (!user_account || !purpose) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp email và mục đích (purpose)' });
+    }
+
+    if (!['register', 'reset_password'].includes(purpose)) {
+        return res.status(400).json({ message: 'Mục đích không hợp lệ' });
     }
 
     try {
         const [existingUser] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
-        if (existingUser.length > 0) {
-            return res.status(400).json({ message: 'Tài khoản đã tồn tại, không cần gửi OTP' });
+
+        if (purpose === 'register') {
+            // Đăng ký: kiểm tra tài khoản không được tồn tại
+            if (existingUser.length > 0) {
+                return res.status(400).json({ message: 'Tài khoản đã tồn tại' });
+            }
+        } else if (purpose === 'reset_password') {
+            // Quên mật khẩu: kiểm tra tài khoản phải tồn tại
+            if (existingUser.length === 0) {
+                return res.status(404).json({ message: 'Tài khoản không tồn tại' });
+            }
         }
 
         const otp = generateOtp();
@@ -61,7 +74,7 @@ router.post('/send_otp', async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: user_account,
-            subject: 'Mã OTP Xác Minh Tài Khoản',
+            subject: `Mã OTP ${purpose === 'register' ? 'Xác Minh Tài Khoản' : 'Đặt Lại Mật Khẩu'}`,
             text: `Mã OTP của bạn là: ${otp}. Mã này có hiệu lực trong 5 phút.`,
         };
 
