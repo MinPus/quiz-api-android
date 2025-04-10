@@ -37,7 +37,7 @@ const generateOtp = () => {
 };
 
 // API gửi OTP
-router.post('/api/send_otp', async (req, res) => {
+router.post('/send_otp', async (req, res) => {
     const { user_account } = req.body;
 
     if (!user_account) {
@@ -74,7 +74,7 @@ router.post('/api/send_otp', async (req, res) => {
 });
 
 // API xác minh OTP
-router.post('/api/verify_otp', async (req, res) => {
+router.post('/verify_otp', async (req, res) => {
     const { user_account, otp } = req.body;
 
     if (!user_account || !otp) {
