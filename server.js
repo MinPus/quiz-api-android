@@ -7,15 +7,9 @@ const authRoutes = require('./src/routes/authRoutes');
 dotenv.config();
 const app = express();
 
-// Log tất cả các yêu cầu để debug
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-});
-
-// Cấu hình CORS
+// Cấu hình CORS để cho phép tất cả các nguồn gốc
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5000", "http://localhost:53827"], // Thêm cổng của Flutter web
+    origin: "*", // Cho phép tất cả các nguồn gốc (dùng trong phát triển)
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
