@@ -5,6 +5,22 @@ const db = require('../db');
 const router = express.Router();
 require('dotenv').config();
 
+// Middleware để xác thực JWT
+const authenticate = (req, res, next) => {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+        return res.status(401).json({ message: 'Không có token, truy cập bị từ chối' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Gắn payload đã giải mã (ví dụ: { id_user }) vào req.user
+        next();
+    } catch (error) {
+        res.status(401).json({ message: 'Token không hợp lệ' });
+    }
+};
+
 // Test API thêm user
 router.post('/user', async (req, res) => {
     const { name_user, user_account, pword_account } = req.body;
@@ -213,16 +229,15 @@ router.put('/kehoach/:id', authenticate, async (req, res) => {
 });
 
 // xóa kế hoạch
-router.delete('/kehoach/:id', authenticate, async (req, res) => {
-    const { id } = req.params;
+router.delete('/user/:id_user', authenticate, async (req, res) => {
+    const { id_user } = req.params;
+    if (req.user.id_user != id_user) {
+        return res.status(403).json({ message: 'Bạn không có quyền xóa người dùng này' });
+    }
     try {
-        const [plan] = await db.query('SELECT * FROM ke_hoach WHERE id_plan = ? AND id_user = ?', [id, req.user.id_user]);
-        if (plan.length === 0) {
-            return res.status(404).json({ message: 'Kế hoạch không tồn tại' });
-        }
-
-        await db.query('DELETE FROM ke_hoach WHERE id_plan = ? AND id_user = ?', [id, req.user.id_user]);
-        res.json({ message: 'Xóa kế hoạch thành công' });
+        await db.query('DELETE FROM ke_hoach WHERE id_user = ?', [id_user]);
+        await db.query('DELETE FROM user WHERE id_user = ?', [id_user]);
+        res.json({ message: 'Xóa người dùng và toàn bộ kế hoạch thành công' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error });
     }
