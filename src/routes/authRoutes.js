@@ -14,27 +14,24 @@ const authenticate = (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Sửa từ jwt.send thành jwt.verify
-        req.user = decoded; // Gắn payload đã giải mã (ví dụ: { id_user }) vào req.user
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
         next();
     } catch (error) {
         res.status(401).json({ message: 'Token không hợp lệ' });
     }
 };
 
-// Cấu hình Nodemailer (sử dụng Gmail)
+// Cấu hình Nodemailer
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER, // Lấy từ .env
-        pass: process.env.EMAIL_PASS, // Lấy từ .env
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
     },
 });
 
-// Biến tạm để lưu OTP (trong thực tế, nên dùng database với thời gian hết hạn)
-let storedOtps = {};
-
-// Hàm tạo mã OTP ngẫu nhiên (6 chữ số)
+// Hàm tạo mã OTP
 const generateOtp = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
