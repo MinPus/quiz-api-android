@@ -212,4 +212,20 @@ router.put('/kehoach/:id', authenticate, async (req, res) => {
     }
 });
 
+// xóa kế hoạch
+router.delete('/kehoach/:id', authenticate, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [plan] = await db.query('SELECT * FROM ke_hoach WHERE id_plan = ? AND id_user = ?', [id, req.user.id_user]);
+        if (plan.length === 0) {
+            return res.status(404).json({ message: 'Kế hoạch không tồn tại' });
+        }
+
+        await db.query('DELETE FROM ke_hoach WHERE id_plan = ? AND id_user = ?', [id, req.user.id_user]);
+        res.json({ message: 'Xóa kế hoạch thành công' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error });
+    }
+});
+
 module.exports = router;
