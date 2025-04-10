@@ -40,7 +40,7 @@ const generateOtp = () => {
 };
 
 // API gửi OTP
-router.post('/api/send_otp', async (req, res) => {
+router.post('/send_otp', async (req, res) => {
     const { user_account } = req.body;
 
     if (!user_account) {
@@ -48,23 +48,19 @@ router.post('/api/send_otp', async (req, res) => {
     }
 
     try {
-        // Kiểm tra tài khoản tồn tại
         const [existingUser] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
         if (existingUser.length > 0) {
             return res.status(400).json({ message: 'Tài khoản đã tồn tại, không cần gửi OTP' });
         }
 
-        // Tạo OTP
         const otp = generateOtp();
-        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // Hết hạn sau 5 phút
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-        // Lưu OTP vào database
         await db.query(
             'INSERT INTO otp_verifications (user_account, otp_code, expires_at) VALUES (?, ?, ?)',
             [user_account, otp, expiresAt]
         );
 
-        // Gửi email
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: user_account,
@@ -81,7 +77,7 @@ router.post('/api/send_otp', async (req, res) => {
 });
 
 // API xác minh OTP
-router.post('/api/verify_otp', async (req, res) => {
+router.post('/verify_otp', async (req, res) => {
     const { user_account, otp } = req.body;
 
     if (!user_account || !otp) {
@@ -98,7 +94,6 @@ router.post('/api/verify_otp', async (req, res) => {
             return res.status(400).json({ message: 'Mã OTP không đúng hoặc đã hết hạn' });
         }
 
-        // Xóa OTP sau khi xác minh thành công
         await db.query('DELETE FROM otp_verifications WHERE user_account = ?', [user_account]);
         res.status(200).json({ message: 'Xác minh OTP thành công' });
     } catch (error) {
