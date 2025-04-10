@@ -48,22 +48,23 @@ router.post('/api/send_otp', async (req, res) => {
     }
 
     try {
-        // Kiểm tra xem user_account có tồn tại trong DB không
+        // Kiểm tra tài khoản tồn tại
         const [existingUser] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
         if (existingUser.length > 0) {
             return res.status(400).json({ message: 'Tài khoản đã tồn tại, không cần gửi OTP' });
         }
 
-        // Tạo mã OTP
+        // Tạo OTP
         const otp = generateOtp();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // Hết hạn sau 5 phút
 
-        // Lưu OTP tạm thời với thời gian hết hạn
-        storedOtps[user_account] = {
-            code: otp,
-            expiresAt: Date.now() + 5 * 60 * 1000, // Hết hạn sau 5 phút
-        };
+        // Lưu OTP vào database
+        await db.query(
+            'INSERT INTO otp_verifications (user_account, otp_code, expires_at) VALUES (?, ?, ?)',
+            [user_account, otp, expiresAt]
+        );
 
-        // Cấu hình email
+        // Gửi email
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: user_account,
@@ -71,9 +72,7 @@ router.post('/api/send_otp', async (req, res) => {
             text: `Mã OTP của bạn là: ${otp}. Mã này có hiệu lực trong 5 phút.`,
         };
 
-        // Gửi email
         await transporter.sendMail(mailOptions);
-
         res.status(200).json({ message: 'OTP đã được gửi thành công tới email của bạn' });
     } catch (error) {
         console.error('Lỗi khi gửi OTP:', error);
@@ -90,15 +89,20 @@ router.post('/api/verify_otp', async (req, res) => {
     }
 
     try {
-        const storedOtp = storedOtps[user_account];
-        if (!storedOtp || storedOtp.code !== otp || Date.now() > storedOtp.expiresAt) {
+        const [otpRecord] = await db.query(
+            'SELECT * FROM otp_verifications WHERE user_account = ? AND otp_code = ? AND expires_at > NOW()',
+            [user_account, otp]
+        );
+
+        if (otpRecord.length === 0) {
             return res.status(400).json({ message: 'Mã OTP không đúng hoặc đã hết hạn' });
         }
 
         // Xóa OTP sau khi xác minh thành công
-        delete storedOtps[user_account];
+        await db.query('DELETE FROM otp_verifications WHERE user_account = ?', [user_account]);
         res.status(200).json({ message: 'Xác minh OTP thành công' });
     } catch (error) {
+        console.error('Lỗi khi xác minh OTP:', error);
         res.status(500).json({ message: 'Lỗi server khi xác minh OTP', error: error.message });
     }
 });
