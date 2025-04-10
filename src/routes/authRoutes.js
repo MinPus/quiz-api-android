@@ -286,7 +286,7 @@ const generateOtp = () => {
 };
 
 // API gửi OTP
-router.post('/api/send-otp', async (req, res) => {
+router.post('/api/send_otp', async (req, res) => {
     const { user_account } = req.body;
 
     if (!user_account) {
@@ -325,7 +325,7 @@ router.post('/api/send-otp', async (req, res) => {
 });
 
 // API xác minh OTP (để dùng với /api/verify-otp trong Flutter)
-router.post('/api/verify-otp', async (req, res) => {
+router.post('/api/verify_otp', async (req, res) => {
     const { user_account, otp } = req.body;
 
     if (!user_account || !otp) {
