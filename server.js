@@ -1,42 +1,44 @@
 const cors = require("cors");
 const express = require('express');
 const dotenv = require('dotenv');
-const pool = require('./src/db'); // Import kết nối MySQL
+const pool = require('./src/db');
 const authRoutes = require('./src/routes/authRoutes');
 
 dotenv.config();
 const app = express();
+
+// Cấu hình CORS để cho phép tất cả các nguồn gốc
+app.use(cors({
+    origin: "*", // Cho phép tất cả các nguồn gốc (dùng trong phát triển)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
+
+// Middleware để parse JSON
 app.use(express.json());
+
+// Định nghĩa các route
 app.use('/api', authRoutes);
 
-const PORT = process.env.PORT || 3000;
-
-// Cấu hình CORS cho phép frontend truy cập
-app.use(cors({
-    origin: "http://localhost:5173", // Hoặc URL của frontend trên mạng
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true // Nếu có dùng cookie hoặc session
-  }));
-
-// Các route API của bạn ở đây
+// Route kiểm tra CORS
 app.get("/test", (req, res) => {
-  res.json({ message: "CORS đã được bật!" });
+  res.json({ message: "CORS has been enabled!" });
 });
 
-app.listen(3000, () => {
-  console.log("Server đang chạy trên cổng 3000");
-});
-
+// Hàm kiểm tra kết nối database
 async function checkDatabaseConnection() {
     try {
-        await pool.query('SELECT 1'); // Kiểm tra kết nối bằng một truy vấn đơn giản
+        await pool.query('SELECT 1');
         console.log('✅ Connected to MySQL database');
     } catch (err) {
         console.error('❌ Database connection failed:', err.message);
+        process.exit(1);
     }
 }
 
+// Khởi động server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    await checkDatabaseConnection(); // Kiểm tra kết nối DB khi server khởi động
+    await checkDatabaseConnection();
 });

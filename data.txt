@@ -1,0 +1,29 @@
+CREATE TABLE user (
+    id_user INT PRIMARY KEY AUTO_INCREMENT,
+    name_user VARCHAR(100) NOT NULL,
+    user_account VARCHAR(50) UNIQUE NOT NULL,
+    pword_account VARCHAR(255) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE ke_hoach (
+    id_plan INT PRIMARY KEY AUTO_INCREMENT,
+    name_plan VARCHAR(255) NOT NULL,
+    noidung TEXT NOT NULL,
+    ngaygiobatdau DATETIME NOT NULL,
+    ngaygioketthuc DATETIME NOT NULL,
+    id_user INT,
+    FOREIGN KEY (id_user) REFERENCES user(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+INSERT INTO user (name_user, user_account, pword_account) VALUES
+('Nguyen Van A', 'nguyenvana', 'password1'),
+('Tran Thi B', 'tranthib', 'password2'),
+('Le Van C', 'levanc', 'password3');
+
+INSERT INTO ke_hoach (name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user) VALUES
+('Plan 1A', 'Noi dung ke hoach 1 cua A', '2025-04-10 08:00:00', '2025-04-10 12:00:00', 1),
+('Plan 2A', 'Noi dung ke hoach 2 cua A', '2025-04-11 09:00:00', '2025-04-11 11:30:00', 1),
+('Plan 1B', 'Noi dung ke hoach 1 cua B', '2025-04-12 10:00:00', '2025-04-12 15:00:00', 2),
+('Plan 2B', 'Noi dung ke hoach 2 cua B', '2025-04-13 13:00:00', '2025-04-13 16:30:00', 2),
+('Plan 1C', 'Noi dung ke hoach 1 cua C', '2025-04-14 14:00:00', '2025-04-14 18:00:00', 3),
+('Plan 2C', 'Noi dung ke hoach 2 cua C', '2025-04-15 07:30:00', '2025-04-15 10:30:00', 3);
