@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const nodemailer = require('nodemailer');
 const router = express.Router();
 require('dotenv').config();
 
@@ -13,13 +14,94 @@ const authenticate = (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.send(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Sửa từ jwt.send thành jwt.verify
         req.user = decoded; // Gắn payload đã giải mã (ví dụ: { id_user }) vào req.user
         next();
     } catch (error) {
         res.status(401).json({ message: 'Token không hợp lệ' });
     }
 };
+
+// Cấu hình Nodemailer (sử dụng Gmail)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER, // Lấy từ .env
+        pass: process.env.EMAIL_PASS, // Lấy từ .env
+    },
+});
+
+// Biến tạm để lưu OTP (trong thực tế, nên dùng database với thời gian hết hạn)
+let storedOtps = {};
+
+// Hàm tạo mã OTP ngẫu nhiên (6 chữ số)
+const generateOtp = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// API gửi OTP
+router.post('/api/send_otp', async (req, res) => {
+    const { user_account } = req.body;
+
+    if (!user_account) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp email' });
+    }
+
+    try {
+        // Kiểm tra xem user_account có tồn tại trong DB không
+        const [existingUser] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
+        if (existingUser.length > 0) {
+            return res.status(400).json({ message: 'Tài khoản đã tồn tại, không cần gửi OTP' });
+        }
+
+        // Tạo mã OTP
+        const otp = generateOtp();
+
+        // Lưu OTP tạm thời với thời gian hết hạn
+        storedOtps[user_account] = {
+            code: otp,
+            expiresAt: Date.now() + 5 * 60 * 1000, // Hết hạn sau 5 phút
+        };
+
+        // Cấu hình email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user_account,
+            subject: 'Mã OTP Xác Minh Tài Khoản',
+            text: `Mã OTP của bạn là: ${otp}. Mã này có hiệu lực trong 5 phút.`,
+        };
+
+        // Gửi email
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({ message: 'OTP đã được gửi thành công tới email của bạn' });
+    } catch (error) {
+        console.error('Lỗi khi gửi OTP:', error);
+        res.status(500).json({ message: 'Lỗi server khi gửi OTP', error: error.message });
+    }
+});
+
+// API xác minh OTP
+router.post('/api/verify_otp', async (req, res) => {
+    const { user_account, otp } = req.body;
+
+    if (!user_account || !otp) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp email và mã OTP' });
+    }
+
+    try {
+        const storedOtp = storedOtps[user_account];
+        if (!storedOtp || storedOtp.code !== otp || Date.now() > storedOtp.expiresAt) {
+            return res.status(400).json({ message: 'Mã OTP không đúng hoặc đã hết hạn' });
+        }
+
+        // Xóa OTP sau khi xác minh thành công
+        delete storedOtps[user_account];
+        res.status(200).json({ message: 'Xác minh OTP thành công' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi xác minh OTP', error: error.message });
+    }
+});
 
 // Test API thêm user
 router.post('/user', async (req, res) => {
@@ -113,7 +195,7 @@ router.get('/user/:id', async (req, res) => {
 
 // Cập nhật thông tin người dùng (chỉ cập nhật name_user và pword_account)
 router.put('/user/:id', authenticate, async (req, res) => {
-    const { id } = personally
+    const { id } = req.params; // Sửa từ personally thành req.params
     const { name_user, pword_account } = req.body;
     try {
         const [user] = await db.query('SELECT * FROM user WHERE id_user = ?', [id]);
@@ -266,83 +348,4 @@ router.delete('/kehoach/:id', authenticate, async (req, res) => {
     }
 });
 
-const nodemailer = require('nodemailer');
-
-// Cấu hình Nodemailer (sử dụng Gmail làm ví dụ, bạn có thể thay bằng dịch vụ email khác)
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER, // Thêm email của bạn vào .env
-        pass: process.env.EMAIL_PASS, // Thêm app password của bạn vào .env (nếu dùng Gmail, cần tạo app password)
-    },
-});
-
-// Biến tạm để lưu OTP (trong thực tế, nên dùng database với thời gian hết hạn)
-let storedOtps = {};
-
-// Hàm tạo mã OTP ngẫu nhiên (6 chữ số)
-const generateOtp = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-// API gửi OTP
-router.post('/api/send_otp', async (req, res) => {
-    const { user_account } = req.body;
-
-    if (!user_account) {
-        return res.status(400).json({ message: 'Vui lòng cung cấp email' });
-    }
-
-    try {
-        // Kiểm tra xem user_account có tồn tại trong DB không
-        const [existingUser] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
-        if (existingUser.length > 0) {
-            return res.status(400).json({ message: 'Tài khoản đã tồn tại, không cần gửi OTP' });
-        }
-
-        // Tạo mã OTP
-        const otp = generateOtp();
-
-        // Lưu OTP tạm thời (nên thay bằng Redis hoặc DB với TTL)
-        storedOtps[user_account] = otp;
-
-        // Cấu hình email
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: user_account,
-            subject: 'Mã OTP Xác Minh Tài Khoản',
-            text: `Mã OTP của bạn là: ${otp}. Mã này có hiệu lực trong 5 phút.`,
-        };
-
-        // Gửi email
-        await transporter.sendMail(mailOptions);
-
-        res.status(200).json({ message: 'OTP đã được gửi thành công tới email của bạn' });
-    } catch (error) {
-        console.error('Lỗi khi gửi OTP:', error);
-        res.status(500).json({ message: 'Lỗi server khi gửi OTP', error: error.message });
-    }
-});
-
-// API xác minh OTP (để dùng với /api/verify-otp trong Flutter)
-router.post('/api/verify_otp', async (req, res) => {
-    const { user_account, otp } = req.body;
-
-    if (!user_account || !otp) {
-        return res.status(400).json({ message: 'Vui lòng cung cấp email và mã OTP' });
-    }
-
-    try {
-        // Kiểm tra OTP
-        if (storedOtps[user_account] && storedOtps[user_account] === otp) {
-            // Xóa OTP sau khi xác minh thành công (tránh tái sử dụng)
-            delete storedOtps[user_account];
-            res.status(200).json({ message: 'Xác minh OTP thành công' });
-        } else {
-            res.status(400).json({ message: 'Mã OTP không đúng hoặc đã hết hạn' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi xác minh OTP', error: error.message });
-    }
-});
 module.exports = router;
