@@ -1,17 +1,23 @@
 const cors = require("cors");
 const express = require('express');
 const dotenv = require('dotenv');
-const pool = require('./src/db'); // Import kết nối MySQL
+const pool = require('./src/db');
 const authRoutes = require('./src/routes/authRoutes');
 
 dotenv.config();
 const app = express();
 
-// Đặt middleware CORS trước tất cả các route
+// Log tất cả các yêu cầu để debug
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
+// Cấu hình CORS
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:5000"], // Thêm cổng của Flutter web
+    origin: ["http://localhost:5173", "http://localhost:5000", "http://localhost:53827"], // Thêm cổng của Flutter web
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true // Nếu có dùng cookie hoặc session
+    credentials: true
 }));
 
 // Middleware để parse JSON
@@ -28,11 +34,11 @@ app.get("/test", (req, res) => {
 // Hàm kiểm tra kết nối database
 async function checkDatabaseConnection() {
     try {
-        await pool.query('SELECT 1'); // Kiểm tra kết nối bằng một truy vấn đơn giản
+        await pool.query('SELECT 1');
         console.log('✅ Connected to MySQL database');
     } catch (err) {
         console.error('❌ Database connection failed:', err.message);
-        process.exit(1); // Thoát nếu không kết nối được database
+        process.exit(1);
     }
 }
 
@@ -40,5 +46,5 @@ async function checkDatabaseConnection() {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    await checkDatabaseConnection(); // Kiểm tra kết nối DB khi server khởi động
+    await checkDatabaseConnection();
 });
