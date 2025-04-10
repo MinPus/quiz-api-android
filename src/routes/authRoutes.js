@@ -35,7 +35,7 @@ router.post('/user', async (req, res) => {
 
         res.status(201).json({ message: 'Thêm user thành công', user: { name_user, user_account } });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
@@ -58,13 +58,17 @@ router.post('/register', async (req, res) => {
 
         res.status(201).json({ message: 'Đăng ký thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
 // Đăng nhập
 router.post('/login', async (req, res) => {
     const { user_account, pword_account } = req.body;
+    if (!user_account || !pword_account) {
+        return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
+    }
+
     try {
         const [user] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
         if (user.length === 0) {
@@ -79,17 +83,17 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ id_user: user[0].id_user }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ message: 'Đăng nhập thành công', token });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
 // Lấy danh sách người dùng
 router.get('/user', async (req, res) => {
     try {
-        const [user] = await db.query('SELECT id_user, name_user, user_account FROM user');
-        res.json(user);
+        const [users] = await db.query('SELECT id_user, name_user, user_account FROM user');
+        res.json(users);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
@@ -103,18 +107,22 @@ router.get('/user/:id', async (req, res) => {
         }
         res.json(user[0]);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
 // Cập nhật thông tin người dùng (chỉ cập nhật name_user và pword_account)
-router.put('/user/:id', async (req, res) => {
-    const { id } = req.params;
+router.put('/user/:id', authenticate, async (req, res) => {
+    const { id } = personally
     const { name_user, pword_account } = req.body;
     try {
         const [user] = await db.query('SELECT * FROM user WHERE id_user = ?', [id]);
         if (user.length === 0) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        if (req.user.id_user != id) {
+            return res.status(403).json({ message: 'Bạn không có quyền cập nhật người dùng này' });
         }
 
         const updatedName = name_user || user[0].name_user;
@@ -125,19 +133,22 @@ router.put('/user/:id', async (req, res) => {
 
         res.json({ message: 'Cập nhật người dùng thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
 // Xóa người dùng và toàn bộ kế hoạch liên quan
 router.delete('/user/:id_user', authenticate, async (req, res) => {
     const { id_user } = req.params;
+    if (req.user.id_user != id_user) {
+        return res.status(403).json({ message: 'Bạn không có quyền xóa người dùng này' });
+    }
     try {
         await db.query('DELETE FROM ke_hoach WHERE id_user = ?', [id_user]);
         await db.query('DELETE FROM user WHERE id_user = ?', [id_user]);
         res.json({ message: 'Xóa người dùng và toàn bộ kế hoạch thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
@@ -147,7 +158,7 @@ router.get('/kehoach', async (req, res) => {
         const [plans] = await db.query('SELECT * FROM ke_hoach');
         res.json(plans);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
@@ -161,26 +172,33 @@ router.get('/kehoach/:id', authenticate, async (req, res) => {
         }
         res.json(plan[0]);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
 // Lấy danh sách kế hoạch theo ID người dùng
 router.get('/kehoach/user/:id_user', authenticate, async (req, res) => {
     const { id_user } = req.params;
+    if (req.user.id_user != id_user) {
+        return res.status(403).json({ message: 'Bạn không có quyền xem kế hoạch của người dùng này' });
+    }
     try {
         const [plans] = await db.query('SELECT * FROM ke_hoach WHERE id_user = ?', [id_user]);
         res.json(plans);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
 // Thêm kế hoạch
-router.post('/kehoach', async (req, res) => {
+router.post('/kehoach', authenticate, async (req, res) => {
     const { name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user } = req.body;
     if (!name_plan || !noidung || !ngaygiobatdau || !ngaygioketthuc || !id_user) {
         return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
+    }
+
+    if (req.user.id_user != id_user) {
+        return res.status(403).json({ message: 'Bạn không có quyền thêm kế hoạch cho người dùng này' });
     }
 
     try {
@@ -188,7 +206,7 @@ router.post('/kehoach', async (req, res) => {
             [name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user]);
         res.status(201).json({ message: 'Thêm kế hoạch thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
@@ -200,12 +218,16 @@ router.post('/kehoach/user/:id_user', authenticate, async (req, res) => {
         return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
     }
 
+    if (req.user.id_user != id_user) {
+        return res.status(403).json({ message: 'Bạn không có quyền thêm kế hoạch cho người dùng này' });
+    }
+
     try {
         await db.query('INSERT INTO ke_hoach (name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user) VALUES (?, ?, ?, ?, ?)',
             [name_plan, noidung, ngaygiobatdau, ngaygioketthuc, id_user]);
         res.status(201).json({ message: 'Thêm kế hoạch thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
@@ -224,22 +246,23 @@ router.put('/kehoach/:id', authenticate, async (req, res) => {
         
         res.json({ message: 'Cập nhật kế hoạch thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
-// xóa kế hoạch
-router.delete('/user/:id_user', authenticate, async (req, res) => {
-    const { id_user } = req.params;
-    if (req.user.id_user != id_user) {
-        return res.status(403).json({ message: 'Bạn không có quyền xóa người dùng này' });
-    }
+// Xóa kế hoạch
+router.delete('/kehoach/:id', authenticate, async (req, res) => {
+    const { id } = req.params;
     try {
-        await db.query('DELETE FROM ke_hoach WHERE id_user = ?', [id_user]);
-        await db.query('DELETE FROM user WHERE id_user = ?', [id_user]);
-        res.json({ message: 'Xóa người dùng và toàn bộ kế hoạch thành công' });
+        const [plan] = await db.query('SELECT * FROM ke_hoach WHERE id_plan = ? AND id_user = ?', [id, req.user.id_user]);
+        if (plan.length === 0) {
+            return res.status(404).json({ message: 'Kế hoạch không tồn tại' });
+        }
+
+        await db.query('DELETE FROM ke_hoach WHERE id_plan = ? AND id_user = ?', [id, req.user.id_user]);
+        res.json({ message: 'Xóa kế hoạch thành công' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server', error });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 });
 
