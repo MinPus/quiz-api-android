@@ -117,7 +117,33 @@ router.post('/verify_otp', async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi xác minh OTP', error: error.message });
     }
 });
+// Đặt lại mật khẩu
+router.post('/reset_password', async (req, res) => {
+    const { user_account, new_password } = req.body;
 
+    if (!user_account || !new_password) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp email và mật khẩu mới' });
+    }
+
+    try {
+        // Kiểm tra xem tài khoản có tồn tại không
+        const [user] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
+        if (user.length === 0) {
+            return res.status(404).json({ message: 'Tài khoản không tồn tại' });
+        }
+
+        // Mã hóa mật khẩu mới
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        // Cập nhật mật khẩu trong cơ sở dữ liệu
+        await db.query('UPDATE user SET pword_account = ? WHERE user_account = ?', [hashedPassword, user_account]);
+
+        res.status(200).json({ message: 'Đặt lại mật khẩu thành công' });
+    } catch (error) {
+        console.error('Lỗi khi đặt lại mật khẩu:', error);
+        res.status(500).json({ message: 'Lỗi server khi đặt lại mật khẩu', error: error.message });
+    }
+});
 // Test API thêm user
 router.post('/user', async (req, res) => {
     const { name_user, user_account, pword_account } = req.body;
