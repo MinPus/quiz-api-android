@@ -9,7 +9,7 @@ const app = express();
 
 // Đặt middleware CORS trước tất cả các route
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5000"], // Thêm cổng của Flutter web
+    origin: ["http://localhost:3000", "http://localhost:5000"], // Thêm cổng của Flutter web
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true // Nếu có dùng cookie hoặc session
 }));
