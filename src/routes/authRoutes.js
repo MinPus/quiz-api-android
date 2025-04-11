@@ -12,6 +12,13 @@ const isValidEmail = (email) => {
     return emailRegex.test(email);
 };
 
+// Hàm kiểm tra định dạng mật khẩu
+const isValidPassword = (password) => {
+    // Độ dài từ 8 đến 16 ký tự, có ít nhất 1 chữ hoa, 1 số, 1 ký tự đặc biệt
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,16}$/;
+    return passwordRegex.test(password);
+};
+
 // Middleware để xác thực JWT
 const authenticate = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -147,6 +154,13 @@ router.post('/reset_password', async (req, res) => {
         return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
+    // Kiểm tra định dạng mật khẩu
+    if (!isValidPassword(new_password)) {
+        return res.status(400).json({
+            message: 'Mật khẩu phải từ 8 đến 16 ký tự, bao gồm ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (!@#$%^&*)'
+        });
+    }
+
     try {
         // Kiểm tra xem tài khoản có tồn tại không
         const [user] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
@@ -179,6 +193,13 @@ router.post('/user', async (req, res) => {
         return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
+    // Kiểm tra định dạng mật khẩu
+    if (!isValidPassword(pword_account)) {
+        return res.status(400).json({
+            message: 'Mật khẩu phải từ 8 đến 16 ký tự, bao gồm ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (!@#$%^&*)'
+        });
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(pword_account, 10);
         await db.query('INSERT INTO user (name_user, user_account, pword_account) VALUES (?, ?, ?)',
@@ -200,6 +221,13 @@ router.post('/register', async (req, res) => {
     // Kiểm tra định dạng email
     if (!isValidEmail(user_account)) {
         return res.status(400).json({ message: 'Email không hợp lệ' });
+    }
+
+    // Kiểm tra định dạng mật khẩu
+    if (!isValidPassword(pword_account)) {
+        return res.status(400).json({
+            message: 'Mật khẩu phải từ 8 đến 16 ký tự, bao gồm ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (!@#$%^&*)'
+        });
     }
 
     try {
@@ -228,6 +256,13 @@ router.post('/login', async (req, res) => {
     // Kiểm tra định dạng email
     if (!isValidEmail(user_account)) {
         return res.status(400).json({ message: 'Email không hợp lệ' });
+    }
+
+    // Kiểm tra định dạng mật khẩu
+    if (!isValidPassword(pword_account)) {
+        return res.status(400).json({
+            message: 'Mật khẩu phải từ 8 đến 16 ký tự, bao gồm ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (!@#$%^&*)'
+        });
     }
 
     try {
@@ -284,6 +319,13 @@ router.put('/user/:id', authenticate, async (req, res) => {
 
         if (req.user.id_user != id) {
             return res.status(403).json({ message: 'Bạn không có quyền cập nhật người dùng này' });
+        }
+
+        // Nếu có pword_account, kiểm tra định dạng mật khẩu
+        if (pword_account && !isValidPassword(pword_account)) {
+            return res.status(400).json({
+                message: 'Mật khẩu phải từ 8 đến 16 ký tự, bao gồm ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (!@#$%^&*)'
+            });
         }
 
         const updatedName = name_user || user[0].name_user;
