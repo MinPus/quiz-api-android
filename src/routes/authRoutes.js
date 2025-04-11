@@ -213,21 +213,24 @@ router.post('/user', async (req, res) => {
 
 // Đăng ký
 router.post('/register', async (req, res) => {
-    const { name_user, user_account, pword_account } = req.body;
-    if (!name_user || !user_account || !pword_account) {
+    const { name_user, user_account, pword_account, confirm_pword_account } = req.body;
+    if (!name_user || !user_account || !pword_account || !confirm_pword_account) {
         return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
     }
 
-    // Kiểm tra định dạng email
     if (!isValidEmail(user_account)) {
         return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
-    // Kiểm tra định dạng mật khẩu
     if (!isValidPassword(pword_account)) {
         return res.status(400).json({
             message: 'Mật khẩu phải từ 8 đến 16 ký tự, bao gồm ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (!@#$%^&*)'
         });
+    }
+
+    // Kiểm tra mật khẩu nhập lại
+    if (pword_account !== confirm_pword_account) {
+        return res.status(400).json({ message: 'Mật khẩu nhập lại không khớp' });
     }
 
     try {
