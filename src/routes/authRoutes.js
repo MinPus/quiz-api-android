@@ -6,6 +6,12 @@ const nodemailer = require('nodemailer');
 const router = express.Router();
 require('dotenv').config();
 
+// Hàm kiểm tra định dạng email
+const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
+
 // Middleware để xác thực JWT
 const authenticate = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -46,6 +52,11 @@ router.post('/send_otp', async (req, res) => {
 
     if (!['register', 'reset_password'].includes(purpose)) {
         return res.status(400).json({ message: 'Mục đích không hợp lệ' });
+    }
+
+    // Kiểm tra định dạng email
+    if (!isValidEmail(user_account)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
     try {
@@ -99,6 +110,11 @@ router.post('/verify_otp', async (req, res) => {
         return res.status(400).json({ message: 'Mục đích không hợp lệ' });
     }
 
+    // Kiểm tra định dạng email
+    if (!isValidEmail(user_account)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
+    }
+
     try {
         // Kiểm tra thêm purpose trong điều kiện WHERE
         const [otpRecord] = await db.query(
@@ -117,12 +133,18 @@ router.post('/verify_otp', async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi xác minh OTP', error: error.message });
     }
 });
+
 // Đặt lại mật khẩu
 router.post('/reset_password', async (req, res) => {
     const { user_account, new_password } = req.body;
 
     if (!user_account || !new_password) {
         return res.status(400).json({ message: 'Vui lòng cung cấp email và mật khẩu mới' });
+    }
+
+    // Kiểm tra định dạng email
+    if (!isValidEmail(user_account)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
     try {
@@ -144,11 +166,17 @@ router.post('/reset_password', async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi đặt lại mật khẩu', error: error.message });
     }
 });
+
 // Test API thêm user
 router.post('/user', async (req, res) => {
     const { name_user, user_account, pword_account } = req.body;
     if (!name_user || !user_account || !pword_account) {
         return res.status(400).json({ message: 'Thiếu thông tin' });
+    }
+
+    // Kiểm tra định dạng email
+    if (!isValidEmail(user_account)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
     try {
@@ -167,6 +195,11 @@ router.post('/register', async (req, res) => {
     const { name_user, user_account, pword_account } = req.body;
     if (!name_user || !user_account || !pword_account) {
         return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
+    }
+
+    // Kiểm tra định dạng email
+    if (!isValidEmail(user_account)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
     try {
@@ -190,6 +223,11 @@ router.post('/login', async (req, res) => {
     const { user_account, pword_account } = req.body;
     if (!user_account || !pword_account) {
         return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
+    }
+
+    // Kiểm tra định dạng email
+    if (!isValidEmail(user_account)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
     try {
@@ -236,7 +274,7 @@ router.get('/user/:id', async (req, res) => {
 
 // Cập nhật thông tin người dùng (chỉ cập nhật name_user và pword_account)
 router.put('/user/:id', authenticate, async (req, res) => {
-    const { id } = req.params; // Sửa từ personally thành req.params
+    const { id } = req.params;
     const { name_user, pword_account } = req.body;
     try {
         const [user] = await db.query('SELECT * FROM user WHERE id_user = ?', [id]);
