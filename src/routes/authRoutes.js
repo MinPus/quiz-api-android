@@ -227,6 +227,26 @@ router.post('/register', async (req, res) => {
             message: 'Mật khẩu phải từ 8 đến 16 ký tự, bao gồm ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (!@#$%^&*)'
         });
     }
+
+    // Kiểm tra mật khẩu nhập lại
+    if (pword_account !== confirm_pword_account) {
+        return res.status(400).json({ message: 'Mật khẩu nhập lại không khớp' });
+    }
+
+    try {
+        const [existingUser] = await db.query('SELECT * FROM user WHERE user_account = ?', [user_account]);
+        if (existingUser.length > 0) {
+            return res.status(400).json({ message: 'Tài khoản đã tồn tại' });
+        }
+
+        const hashedPassword = await bcrypt.hash(pword_account, 10);
+        await db.query('INSERT INTO user (name_user, user_account, pword_account) VALUES (?, ?, ?)',
+            [name_user, user_account, hashedPassword]);
+
+        res.status(201).json({ message: 'Đăng ký thành công' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
 });
 
 // Đăng nhập
